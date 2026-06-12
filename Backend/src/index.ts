@@ -1,8 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes';
-import userRoutes from './routes/userRoutes';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+
+import authRoutes        from './routes/authRoutes';
+import userRoutes        from './routes/userRoutes';
+import equipmentRoutes   from './routes/equipmentRoutes';
+import alertRoutes       from './routes/alertRoutes';
+import dashboardRoutes   from './routes/dashboardRoutes';
+import notificationRoutes from './routes/notificationRoutes';
+import { initWebSocket } from './services/websocketService';
 
 dotenv.config();
 
@@ -10,15 +18,27 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Enregistrer les routes d'authentification
-app.use('/api/auth', authRoutes);
+// ─── Routes API REST ────────────────────────────────────────────────────────
+app.use('/api/auth',          authRoutes);
+app.use('/api/users',         userRoutes);
+app.use('/api/equipments',    equipmentRoutes);
+app.use('/api/alerts',        alertRoutes);
+app.use('/api/dashboard',     dashboardRoutes);
+app.use('/api/notifications', notificationRoutes);
 
-// Enregistrer les routes de gestion des utilisateurs
-app.use('/api/users', userRoutes);
-    
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Le serveur tourne sur le port ${PORT}`);
+// ─── Route de santé ─────────────────────────────────────────────────────────
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ─── Serveur HTTP + WebSocket ────────────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+initWebSocket(wss);
+
+server.listen(PORT, () => {
+  console.log(`✅ Serveur HTTP  → http://localhost:${PORT}`);
+  console.log(`✅ Serveur WS    → ws://localhost:${PORT}`);
+});
