@@ -10,7 +10,9 @@ import equipmentRoutes   from './routes/equipmentRoutes';
 import alertRoutes       from './routes/alertRoutes';
 import dashboardRoutes   from './routes/dashboardRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import predictionRoutes  from './routes/predictionRoutes';
 import { initWebSocket } from './services/websocketService';
+import { startPredictionScheduler } from './services/predictionService';
 
 dotenv.config();
 
@@ -25,6 +27,7 @@ app.use('/api/equipments',    equipmentRoutes);
 app.use('/api/alerts',        alertRoutes);
 app.use('/api/dashboard',     dashboardRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/predictions',   predictionRoutes);
 
 // ─── Route de santé ─────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -41,9 +44,8 @@ initWebSocket(wss);
 server.listen(PORT, () => {
   console.log(`✅ Serveur HTTP  → http://localhost:${PORT}`);
   console.log(`✅ Serveur WS    → ws://localhost:${PORT}`);
+  
+  // Démarrer le planificateur de prédictions
+  startPredictionScheduler();
 });
-
-import predictionRoutes from './routes/predictionRoutes';
-// ...
-app.use('/api/predictions', predictionRoutes);
 
