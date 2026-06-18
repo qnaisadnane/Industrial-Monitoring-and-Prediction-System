@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { broadcast } from '../services/websocketService';
 
 // Récupérer les dernières prédictions de tous les équipements
 export const getPredictions = async (req: Request, res: Response): Promise<void> => {
@@ -47,6 +48,19 @@ export const savePrediction = async (req: Request, res: Response): Promise<void>
       'INSERT INTO predictions (equipment_id, risk_score, prediction) VALUES (?, ?, ?)',
       [equipment_id, risk_score, prediction]
     );
+
+    // Diffuser la prédiction via WebSocket en temps réel
+    broadcast({
+      type: 'NEW_PREDICTION',
+      payload: {
+        id: result.insertId,
+        equipment_id,
+        risk_score,
+        prediction,
+        created_at: new Date().toISOString()
+      }
+    });
+
     res.status(201).json({ message: 'Prédiction enregistrée.', id: result.insertId });
   } catch (error) {
     console.error(error);
