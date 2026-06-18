@@ -42,3 +42,8 @@ server.listen(PORT, () => {
   console.log(`✅ Serveur HTTP  → http://localhost:${PORT}`);
   console.log(`✅ Serveur WS    → ws://localhost:${PORT}`);
 });
+
+import predictionRoutes from './routes/predictionRoutes';
+// ...
+app.use('/api/predictions', predictionRoutes);
+
