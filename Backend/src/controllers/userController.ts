@@ -6,9 +6,10 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 // Récupérer tous les utilisateurs (SANS les mots de passe)
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const [users] = await pool.query<RowDataPacket[]>(
+    const queryResult = await pool.query<RowDataPacket[]>(
       'SELECT id, fullname, email, role, created_at FROM users ORDER BY created_at DESC'
     );
+    const users = queryResult[0];
     res.json(users);
   } catch (error) {
     console.error(error);
@@ -21,10 +22,11 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
   const { id } = req.params;
 
   try {
-    const [users] = await pool.query<RowDataPacket[]>(
+    const queryResult = await pool.query<RowDataPacket[]>(
       'SELECT id, fullname, email, role, created_at FROM users WHERE id = ?',
       [id]
     );
+    const users = queryResult[0];
 
     const user = users[0];
     if (!user) {
@@ -50,10 +52,11 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 
   try {
     // Vérifier si l'email existe déjà
-    const [existingUsers] = await pool.query<RowDataPacket[]>(
+    const queryResultExisting = await pool.query<RowDataPacket[]>(
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
+    const existingUsers = queryResultExisting[0];
 
     if (existingUsers.length > 0) {
       res.status(400).json({ message: 'Cet email est déjà utilisé.' });
@@ -65,10 +68,11 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Insérer l'utilisateur
-    const [result] = await pool.query<ResultSetHeader>(
+    const queryResultInsert = await pool.query<ResultSetHeader>(
       'INSERT INTO users (fullname, email, password, role) VALUES (?, ?, ?, ?)',
       [fullname, email, hashedPassword, role]
     );
+    const result = queryResultInsert[0];
 
     res.status(201).json({
       message: 'Utilisateur créé avec succès.',
@@ -87,10 +91,11 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 
   try {
     // Vérifier si l'utilisateur existe
-    const [users] = await pool.query<RowDataPacket[]>(
+    const queryResultUser = await pool.query<RowDataPacket[]>(
       'SELECT * FROM users WHERE id = ?',
       [id]
     );
+    const users = queryResultUser[0];
 
     const user = users[0];
     if (!user) {
@@ -100,10 +105,11 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 
     // Si l'email est modifié, vérifier qu'il n'est pas pris par un autre
     if (email && email !== user.email) {
-      const [existingUsers] = await pool.query<RowDataPacket[]>(
+      const queryResultExisting = await pool.query<RowDataPacket[]>(
         'SELECT id FROM users WHERE email = ? AND id != ?',
         [email, id]
       );
+      const existingUsers = queryResultExisting[0];
       if (existingUsers.length > 0) {
         res.status(400).json({ message: 'Cet email est déjà utilisé par un autre utilisateur.' });
         return;
@@ -142,10 +148,11 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
   const { id } = req.params;
 
   try {
-    const [result] = await pool.query<ResultSetHeader>(
+    const queryResultDelete = await pool.query<ResultSetHeader>(
       'DELETE FROM users WHERE id = ?',
       [id]
     );
+    const result = queryResultDelete[0];
 
     if (result.affectedRows === 0) {
       res.status(404).json({ message: 'Utilisateur non trouvé.' });
