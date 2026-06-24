@@ -11,6 +11,7 @@ import alertRoutes       from './routes/alertRoutes';
 import dashboardRoutes   from './routes/dashboardRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import predictionRoutes  from './routes/predictionRoutes';
+import reportRoutes      from './routes/reportRoutes';
 import { initWebSocket } from './services/websocketService';
 import { startPredictionScheduler } from './services/predictionService';
 
@@ -28,6 +29,7 @@ app.use('/api/alerts',        alertRoutes);
 app.use('/api/dashboard',     dashboardRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/predictions',   predictionRoutes);
+app.use('/api/reports',       reportRoutes);
 
 // ─── Route de santé ─────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
