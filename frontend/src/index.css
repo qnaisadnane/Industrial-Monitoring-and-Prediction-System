@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  --color-industrial-bg: #0b0f19;
+  --color-industrial-card: rgba(255, 255, 255, 0.03);
+  --color-industrial-border: rgba(255, 255, 255, 0.08);
+  --color-industrial-text: #f3f4f6;
+  --color-industrial-textMuted: #9ca3af;
+  --color-industrial-cyan: #06b6d4;
+  --color-industrial-green: #10b981;
+  --color-industrial-warning: #f59e0b;
+  --color-industrial-critical: #ef4444;
+}
+
+/* Custom styles compatible with Tailwind v4 */
+body {
+  background-color: #0b0f19;
+  color: #f3f4f6;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Glassmorphism custom classes */
+.glass-panel {
+  background: rgba(17, 24, 39, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(6, 182, 212, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(6, 182, 212, 0.15);
+}
+
+/* Glow effects */
+.glow-cyan {
+  box-shadow: 0 0 20px -5px rgba(6, 182, 212, 0.3);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px -5px rgba(239, 68, 68, 0.4);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.3);
+}
+
+/* Custom transitions and animations */
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: .8;
+    transform: scale(0.98);
+  }
+}
