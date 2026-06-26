@@ -77,7 +77,7 @@ const checkThresholds = async (equipmentId: number, measurement: {
   vibration: number;
   pressure: number;
   consumption: number;
-}): Promise<boolean> => {
+}): Promise<void> => {
   const anomalies: { type: string; value: number; threshold: number; severity: string }[] = [];
 
   if (measurement.temperature > THRESHOLDS.temperature) {
@@ -106,12 +106,6 @@ const checkThresholds = async (equipmentId: number, measurement: {
       [equipmentId, anomaly.type, anomaly.severity, description, 'Active']
     );
 
-    // Mettre à jour le statut de l'équipement à "Anomalie"
-    await pool.query(
-      "UPDATE equipments SET status = 'Anomalie' WHERE id = ?",
-      [equipmentId]
-    );
-
     // Créer une notification pour tous les utilisateurs
     const [users] = await pool.query<RowDataPacket[]>('SELECT id FROM users');
     for (const user of users) {
@@ -136,7 +130,7 @@ const checkThresholds = async (equipmentId: number, measurement: {
     });
   }
 
-  return true;
+  return;
 };
 
 // Générer une valeur aléatoire autour d'une base avec une déviation
@@ -186,15 +180,7 @@ const startDataSimulation = (): void => {
         measurements.push({ ...measurement, created_at: new Date().toISOString() });
 
         // Vérifier les seuils critiques
-        const hadAnomaly = await checkThresholds(equipment.id, measurement);
-
-        // Si pas d'anomalie, remettre le statut à "En fonctionnement"
-        if (!hadAnomaly) {
-          await pool.query(
-            "UPDATE equipments SET status = 'En fonctionnement' WHERE id = ? AND status = 'Anomalie'",
-            [equipment.id]
-          );
-        }
+        await checkThresholds(equipment.id, measurement);
       }
 
       // Diffuser toutes les nouvelles mesures aux clients WebSocket
