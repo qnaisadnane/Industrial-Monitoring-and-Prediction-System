@@ -303,7 +303,6 @@ const UsersPage: React.FC = () => {
                   className="px-4 py-3.5 bg-slate-900 border border-white/5 rounded-xl focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 text-white text-sm"
                 >
                   <option value="Technicien">Technicien (Accès Lecture, Clôture Alertes)</option>
-                  <option value="Administrateur">Administrateur (Contrôle total)</option>
                 </select>
               </div>
 
