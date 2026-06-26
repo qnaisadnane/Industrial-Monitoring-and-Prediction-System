@@ -50,6 +50,12 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
+  // Seul le rôle Technicien peut être créé
+  if (role !== 'Technicien') {
+    res.status(403).json({ message: 'Seul le rôle Technicien peut être créé.' });
+    return;
+  }
+
   try {
     // Vérifier si l'email existe déjà
     const queryResultExisting = await pool.query<RowDataPacket[]>(
@@ -148,6 +154,17 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
   const { id } = req.params;
 
   try {
+    // Empêcher la suppression de l'administrateur unique
+    const queryCheck = await pool.query<RowDataPacket[]>(
+      'SELECT role FROM users WHERE id = ?',
+      [id]
+    );
+    const userToDelete = (queryCheck[0] as RowDataPacket[])[0];
+    if (userToDelete?.role === 'Administrateur') {
+      res.status(403).json({ message: 'Impossible de supprimer l\'administrateur.' });
+      return;
+    }
+
     const queryResultDelete = await pool.query<ResultSetHeader>(
       'DELETE FROM users WHERE id = ?',
       [id]
