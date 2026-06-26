@@ -13,7 +13,6 @@ import notificationRoutes from './routes/notificationRoutes';
 import predictionRoutes  from './routes/predictionRoutes';
 import reportRoutes      from './routes/reportRoutes';
 import { initWebSocket } from './services/websocketService';
-import { startPredictionScheduler } from './services/predictionService';
 
 dotenv.config();
 
@@ -47,7 +46,6 @@ server.listen(PORT, () => {
   console.log(`✅ Serveur HTTP  → http://localhost:${PORT}`);
   console.log(`✅ Serveur WS    → ws://localhost:${PORT}`);
   
-  // Démarrer le planificateur de prédictions
-  startPredictionScheduler();
+
 });
 
