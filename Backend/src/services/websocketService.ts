@@ -77,7 +77,7 @@ const checkThresholds = async (equipmentId: number, measurement: {
   vibration: number;
   pressure: number;
   consumption: number;
-}): Promise<void> => {
+}): Promise<boolean> => {
   const anomalies: { type: string; value: number; threshold: number; severity: string }[] = [];
 
   if (measurement.temperature > THRESHOLDS.temperature) {
@@ -96,7 +96,7 @@ const checkThresholds = async (equipmentId: number, measurement: {
     anomalies.push({ type: 'Consommation Excessive', value: measurement.consumption, threshold: THRESHOLDS.consumption, severity: 'Moyenne' });
   }
 
-  if (anomalies.length === 0) return;
+  if (anomalies.length === 0) return false;
 
   for (const anomaly of anomalies) {
     // Insérer l'alerte en base
@@ -135,6 +135,8 @@ const checkThresholds = async (equipmentId: number, measurement: {
       }
     });
   }
+
+  return true;
 };
 
 // Générer une valeur aléatoire autour d'une base avec une déviation
@@ -147,7 +149,7 @@ const startDataSimulation = (): void => {
   setInterval(async () => {
     try {
       const [equipments] = await pool.query<RowDataPacket[]>(
-        "SELECT id FROM equipments WHERE status != 'Arrêté'"
+        "SELECT id FROM equipments WHERE status = 'En fonctionnement'"
       );
 
       if (equipments.length === 0) return;
@@ -163,8 +165,8 @@ const startDataSimulation = (): void => {
       }> = [];
 
       for (const equipment of equipments) {
-        // Simuler des valeurs avec une faible chance d'anomalie (10%)
-        const anomalyChance = Math.random() < 0.10;
+        // Simuler des valeurs avec une faible chance d'anomalie (3%)
+        const anomalyChance = Math.random() < 0.03;
 
         const measurement = {
           equipment_id: equipment.id,
@@ -184,7 +186,15 @@ const startDataSimulation = (): void => {
         measurements.push({ ...measurement, created_at: new Date().toISOString() });
 
         // Vérifier les seuils critiques
-        await checkThresholds(equipment.id, measurement);
+        const hadAnomaly = await checkThresholds(equipment.id, measurement);
+
+        // Si pas d'anomalie, remettre le statut à "En fonctionnement"
+        if (!hadAnomaly) {
+          await pool.query(
+            "UPDATE equipments SET status = 'En fonctionnement' WHERE id = ? AND status = 'Anomalie'",
+            [equipment.id]
+          );
+        }
       }
 
       // Diffuser toutes les nouvelles mesures aux clients WebSocket
