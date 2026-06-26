@@ -1,8 +1,0 @@
-flask
-pandas
-scikit-learn
-pymysql
-cryptography
-python-dotenv
-requests
-joblib
