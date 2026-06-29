@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAlerts, closeAlert, deleteAlert } from '../controllers/alertController';
+import { getAlerts, createAlert, closeAlert, deleteAlert } from '../controllers/alertController';
 import { authMiddleware } from '../middlewares/authMiddleware';
 import { roleMiddleware } from '../middlewares/roleMiddleware';
 
@@ -8,6 +8,9 @@ router.use(authMiddleware);
 
 // Accessible à tous les utilisateurs connectés
 router.get('/', getAlerts);
+
+// Créer une alerte manuellement (Technicien uniquement)
+router.post('/', roleMiddleware(['Technicien']), createAlert);
 
 // Clôturer une alerte (Administrateur + Technicien)
 router.put('/:id/close', closeAlert);

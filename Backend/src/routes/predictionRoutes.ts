@@ -10,10 +10,11 @@ router.use(authMiddleware);
 router.get('/', getPredictions);
 router.get('/equipment/:equipment_id', getPredictionByEquipment);
 
-// Technicien + Admin : créer une prédiction/observation manuelle
-router.post('/', roleMiddleware(['Technicien', 'Administrateur']), createPrediction);
+// Technicien uniquement : soumettre une évaluation manuelle
+router.post('/', roleMiddleware(['Technicien']), createPrediction);
 
 // Admin uniquement : supprimer
 router.delete('/:id', roleMiddleware(['Administrateur']), deletePrediction);
 
 export default router;
+

@@ -6,14 +6,8 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 // Stocker les clients WebSocket connectés avec leurs infos (userId)
 const clients = new Map<WebSocket, { userId?: number }>();
 
-// Seuils critiques de détection d'anomalies
-const THRESHOLDS = {
-  temperature: 85,   // °C
-  voltage: 250,      // V
-  vibration: 8,      // mm/s
-  pressure: 120,     // bar
-  consumption: 500   // kW
-};
+// NOTE : La génération automatique d'alertes par seuil a été désactivée.
+// Les alertes sont désormais créées manuellement par les techniciens via l'interface.
 
 // Initialiser le serveur WebSocket
 export const initWebSocket = (wss: WebSocketServer): void => {
@@ -70,6 +64,7 @@ export const sendToUser = (userId: number, data: object): void => {
   });
 };
 
+<<<<<<< Updated upstream
 // Vérifier les seuils et créer des alertes si nécessaire
 const checkThresholds = async (equipmentId: number, measurement: {
   temperature: number;
@@ -138,6 +133,9 @@ const checkThresholds = async (equipmentId: number, measurement: {
 
   return true;
 };
+=======
+
+>>>>>>> Stashed changes
 
 // Générer une valeur aléatoire autour d'une base avec une déviation
 const randomAround = (base: number, deviation: number): number => {
@@ -184,6 +182,7 @@ const startDataSimulation = (): void => {
         );
 
         measurements.push({ ...measurement, created_at: new Date().toISOString() });
+<<<<<<< Updated upstream
 
         // Vérifier les seuils critiques
         const hadAnomaly = await checkThresholds(equipment.id, measurement);
@@ -195,6 +194,8 @@ const startDataSimulation = (): void => {
             [equipment.id]
           );
         }
+=======
+>>>>>>> Stashed changes
       }
 
       // Diffuser toutes les nouvelles mesures aux clients WebSocket

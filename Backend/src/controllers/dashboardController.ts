@@ -15,14 +15,24 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
       "SELECT COUNT(*) AS active_alerts FROM alerts WHERE status = 'Active'"
     ) as any;
 
+    // Nombre d'alertes résolues
+    const [[{ resolved_alerts }]] = await pool.query<RowDataPacket[]>(
+      "SELECT COUNT(*) AS resolved_alerts FROM alerts WHERE status = 'Résolue'"
+    ) as any;
+
     // Nombre d'équipements en fonctionnement (pour le taux de disponibilité)
     const [[{ running_equipments }]] = await pool.query<RowDataPacket[]>(
       "SELECT COUNT(*) AS running_equipments FROM equipments WHERE status = 'En fonctionnement'"
     ) as any;
 
-    // Consommation totale des dernières mesures de chaque équipement
-    const [[{ total_consumption }]] = await pool.query<RowDataPacket[]>(
-      `SELECT COALESCE(SUM(m.consumption), 0) AS total_consumption
+    // Nombre d'équipements en maintenance
+    const [[{ maintenance_equipments }]] = await pool.query<RowDataPacket[]>(
+      "SELECT COUNT(*) AS maintenance_equipments FROM equipments WHERE status = 'Maintenance'"
+    ) as any;
+
+    // Température moyenne des dernières mesures de chaque équipement
+    const [[{ avg_temperature }]] = await pool.query<RowDataPacket[]>(
+      `SELECT COALESCE(ROUND(AVG(m.temperature), 1), 0) AS avg_temperature
        FROM measurements m
        INNER JOIN (
          SELECT equipment_id, MAX(created_at) AS last_time
@@ -43,9 +53,11 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
     res.json({
       total_equipments: Number(total_equipments),
       active_alerts: Number(active_alerts),
+      resolved_alerts: Number(resolved_alerts),
       running_equipments: Number(running_equipments),
+      maintenance_equipments: Number(maintenance_equipments),
       availability_rate,
-      total_consumption: parseFloat(total_consumption) || 0,
+      avg_temperature: parseFloat(avg_temperature) || 0,
       status_breakdown: statusBreakdown
     });
   } catch (error) {

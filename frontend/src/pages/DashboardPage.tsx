@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useWebSocket } from '../context/WebSocketContext';
-import { 
-  Cpu, 
-  AlertTriangle, 
-  Activity, 
-  Zap, 
+import {
+  Cpu,
+  AlertTriangle,
+  Activity,
   CheckCircle,
   Clock,
   Compass,
-  Download
+  Download,
+  Thermometer,
+  Wrench,
+  ShieldCheck
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -25,9 +27,11 @@ import {
 interface Stats {
   total_equipments: number;
   active_alerts: number;
+  resolved_alerts: number;
   running_equipments: number;
+  maintenance_equipments: number;
   availability_rate: number;
-  total_consumption: number;
+  avg_temperature: number;
 }
 
 interface Equipment {
@@ -52,9 +56,11 @@ const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<Stats>({
     total_equipments: 0,
     active_alerts: 0,
+    resolved_alerts: 0,
     running_equipments: 0,
+    maintenance_equipments: 0,
     availability_rate: 0,
-    total_consumption: 0
+    avg_temperature: 0
   });
   
   const [equipments, setEquipments] = useState<Equipment[]>([]);
@@ -101,6 +107,7 @@ const DashboardPage: React.FC = () => {
     fetchInitialData();
   }, []);
 
+<<<<<<< Updated upstream
   // Listen for real-time measurements from WebSocket
   useEffect(() => {
     const unsubscribe = subscribe('NEW_MEASUREMENTS', (payload: any[]) => {
@@ -137,12 +144,24 @@ const DashboardPage: React.FC = () => {
           total_consumption: parseFloat(newConsumption.toFixed(2))
         };
       });
+=======
+  // Mise à jour de la température moyenne en temps réel
+  useEffect(() => {
+    const unsubscribe = subscribe('NEW_MEASUREMENTS', (payload: any[]) => {
+      if (payload.length === 0) return;
+      const avg = payload.reduce((sum, item) => sum + parseFloat(item.temperature), 0) / payload.length;
+      setStats(prev => ({ ...prev, avg_temperature: parseFloat(avg.toFixed(1)) }));
+>>>>>>> Stashed changes
     });
 
     return () => unsubscribe();
   }, [subscribe]);
 
+<<<<<<< Updated upstream
   // Listen for real-time alerts to increment the alert count
+=======
+  // Incrémenter le compteur d'alertes actives en temps réel
+>>>>>>> Stashed changes
   useEffect(() => {
     const unsubscribe = subscribe('NEW_ALERT', () => {
       setStats(prev => ({ ...prev, active_alerts: prev.active_alerts + 1 }));
@@ -202,6 +221,36 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0b0f19]">
+        <div className="flex flex-col items-center gap-4">
+          <Activity className="w-12 h-12 text-cyan-400 animate-spin" />
+          <p className="text-slate-400 font-semibold">Chargement des données de supervision...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Couleur dynamique pour la température
+  const tempColor =
+    stats.avg_temperature >= 80 ? 'text-rose-400' :
+    stats.avg_temperature >= 65 ? 'text-amber-400' :
+    'text-emerald-400';
+
+  const tempBg =
+    stats.avg_temperature >= 80 ? 'bg-rose-500/10 text-rose-400' :
+    stats.avg_temperature >= 65 ? 'bg-amber-500/10 text-amber-400' :
+    'bg-emerald-500/10 text-emerald-400';
+
+  const tempLabel =
+    stats.avg_temperature >= 80 ? '🔥 Température critique' :
+    stats.avg_temperature >= 65 ? '⚠️ Température élevée' :
+    '✅ Température normale';
+
+>>>>>>> Stashed changes
   return (
     <div className="min-h-screen bg-[#0b0f19] pl-64 pr-6 py-8 flex flex-col gap-8">
       
@@ -226,10 +275,17 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
+<<<<<<< Updated upstream
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* Availability */}
+=======
+      {/* KPI Cards Grid — 3 colonnes sur grand écran */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+        {/* 1. Taux de Disponibilité */}
+>>>>>>> Stashed changes
         <div className="glass-card p-6 rounded-2xl flex items-center justify-between">
           <div className="flex flex-col gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Taux de Disponibilité</span>
@@ -243,7 +299,7 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Active Alerts */}
+        {/* 2. Alertes Actives */}
         <div className={`glass-card p-6 rounded-2xl flex items-center justify-between ${stats.active_alerts > 0 ? 'border-rose-500/20' : ''}`}>
           <div className="flex flex-col gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Alertes Actives</span>
@@ -259,19 +315,21 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Energy Consumption */}
+        {/* 3. Température Moyenne */}
         <div className="glass-card p-6 rounded-2xl flex items-center justify-between">
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Consommation Totale</span>
-            <span className="text-3xl font-extrabold text-white">{stats.total_consumption} kW</span>
-            <span className="text-[10px] text-cyan-400 font-bold">Puissance active cumulée</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Temp. Moyenne Capteurs</span>
+            <span className={`text-3xl font-extrabold ${tempColor}`}>
+              {stats.avg_temperature} °C
+            </span>
+            <span className="text-[10px] font-bold text-slate-400">{tempLabel}</span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
-            <Zap className="w-6 h-6" />
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tempBg}`}>
+            <Thermometer className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Equipments Count */}
+        {/* 4. Parc Machines */}
         <div className="glass-card p-6 rounded-2xl flex items-center justify-between">
           <div className="flex flex-col gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Parc Machines</span>
@@ -280,6 +338,34 @@ const DashboardPage: React.FC = () => {
           </div>
           <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
             <Cpu className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* 5. Alertes Résolues */}
+        <div className="glass-card p-6 rounded-2xl flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Alertes Résolues</span>
+            <span className="text-3xl font-extrabold text-emerald-400">{stats.resolved_alerts}</span>
+            <span className="text-[10px] text-emerald-400 font-bold">Incidents clôturés</span>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* 6. Équipements en Maintenance */}
+        <div className="glass-card p-6 rounded-2xl flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">En Maintenance</span>
+            <span className={`text-3xl font-extrabold ${stats.maintenance_equipments > 0 ? 'text-amber-400' : 'text-white'}`}>
+              {stats.maintenance_equipments}
+            </span>
+            <span className={`text-[10px] font-bold ${stats.maintenance_equipments > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
+              {stats.maintenance_equipments > 0 ? '🔧 Interventions en cours' : 'Aucune maintenance'}
+            </span>
+          </div>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stats.maintenance_equipments > 0 ? 'bg-amber-500/10 text-amber-400' : 'bg-slate-800 text-slate-400'}`}>
+            <Wrench className="w-6 h-6" />
           </div>
         </div>
 
