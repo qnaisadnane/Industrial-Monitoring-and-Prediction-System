@@ -6,14 +6,8 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 // Stocker les clients WebSocket connectés avec leurs infos (userId)
 const clients = new Map<WebSocket, { userId?: number }>();
 
-// Seuils critiques de détection d'anomalies
-const THRESHOLDS = {
-  temperature: 85,   // °C
-  voltage: 250,      // V
-  vibration: 8,      // mm/s
-  pressure: 120,     // bar
-  consumption: 500   // kW
-};
+// NOTE : La génération automatique d'alertes par seuil a été désactivée.
+// Les alertes sont désormais créées manuellement par les techniciens via l'interface.
 
 // Initialiser le serveur WebSocket
 export const initWebSocket = (wss: WebSocketServer): void => {
@@ -70,68 +64,8 @@ export const sendToUser = (userId: number, data: object): void => {
   });
 };
 
-// Vérifier les seuils et créer des alertes si nécessaire
-const checkThresholds = async (equipmentId: number, measurement: {
-  temperature: number;
-  voltage: number;
-  vibration: number;
-  pressure: number;
-  consumption: number;
-}): Promise<void> => {
-  const anomalies: { type: string; value: number; threshold: number; severity: string }[] = [];
 
-  if (measurement.temperature > THRESHOLDS.temperature) {
-    anomalies.push({ type: 'Température Critique', value: measurement.temperature, threshold: THRESHOLDS.temperature, severity: 'Critique' });
-  }
-  if (measurement.voltage > THRESHOLDS.voltage) {
-    anomalies.push({ type: 'Surtension', value: measurement.voltage, threshold: THRESHOLDS.voltage, severity: 'Moyenne' });
-  }
-  if (measurement.vibration > THRESHOLDS.vibration) {
-    anomalies.push({ type: 'Vibration Excessive', value: measurement.vibration, threshold: THRESHOLDS.vibration, severity: 'Critique' });
-  }
-  if (measurement.pressure > THRESHOLDS.pressure) {
-    anomalies.push({ type: 'Surpression', value: measurement.pressure, threshold: THRESHOLDS.pressure, severity: 'Critique' });
-  }
-  if (measurement.consumption > THRESHOLDS.consumption) {
-    anomalies.push({ type: 'Consommation Excessive', value: measurement.consumption, threshold: THRESHOLDS.consumption, severity: 'Moyenne' });
-  }
 
-  if (anomalies.length === 0) return false;
-
-  for (const anomaly of anomalies) {
-    // Insérer l'alerte en base
-    const description = `${anomaly.type} détectée : valeur mesurée ${anomaly.value.toFixed(2)} (seuil: ${anomaly.threshold})`;
-    const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO alerts (equipment_id, type, severity, description, status) VALUES (?, ?, ?, ?, ?)',
-      [equipmentId, anomaly.type, anomaly.severity, description, 'Active']
-    );
-
-    // Créer une notification pour tous les utilisateurs
-    const [users] = await pool.query<RowDataPacket[]>('SELECT id FROM users');
-    for (const user of users) {
-      await pool.query(
-        'INSERT INTO notifications (user_id, message) VALUES (?, ?)',
-        [user.id, `⚠️ Alerte sur équipement #${equipmentId}: ${description}`]
-      );
-    }
-
-    // Diffuser l'alerte via WebSocket en temps réel
-    broadcast({
-      type: 'NEW_ALERT',
-      payload: {
-        id: result.insertId,
-        equipment_id: equipmentId,
-        alert_type: anomaly.type,
-        severity: anomaly.severity,
-        description,
-        status: 'Active',
-        created_at: new Date().toISOString()
-      }
-    });
-  }
-
-  return;
-};
 
 // Générer une valeur aléatoire autour d'une base avec une déviation
 const randomAround = (base: number, deviation: number): number => {
@@ -180,7 +114,15 @@ const startDataSimulation = (): void => {
         measurements.push({ ...measurement, created_at: new Date().toISOString() });
 
         // Vérifier les seuils critiques
-        await checkThresholds(equipment.id, measurement);
+        const hadAnomaly = await checkThresholds(equipment.id, measurement);
+
+        // Si pas d'anomalie, remettre le statut à "En fonctionnement"
+        if (!hadAnomaly) {
+          await pool.query(
+            "UPDATE equipments SET status = 'En fonctionnement' WHERE id = ? AND status = 'Anomalie'",
+            [equipment.id]
+          );
+        }
       }
 
       // Diffuser toutes les nouvelles mesures aux clients WebSocket
