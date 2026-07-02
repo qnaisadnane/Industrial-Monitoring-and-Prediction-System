@@ -64,8 +64,28 @@ export const sendToUser = (userId: number, data: object): void => {
   });
 };
 
+// Créer une notification en base et la diffuser à un ensemble d'utilisateurs
+export const createNotificationForUsers = async (userIds: number[], message: string): Promise<void> => {
+  const createdAt = new Date().toISOString();
 
+  for (const userId of userIds) {
+    const [result] = await pool.query<ResultSetHeader>(
+      'INSERT INTO notifications (user_id, message) VALUES (?, ?)',
+      [userId, message]
+    );
 
+    sendToUser(userId, {
+      type: 'NEW_NOTIFICATION',
+      payload: {
+        id: (result as ResultSetHeader).insertId,
+        user_id: userId,
+        message,
+        read_status: false,
+        created_at: createdAt
+      }
+    });
+  }
+};
 
 // Générer une valeur aléatoire autour d'une base avec une déviation
 const randomAround = (base: number, deviation: number): number => {
@@ -112,17 +132,6 @@ const startDataSimulation = (): void => {
         );
 
         measurements.push({ ...measurement, created_at: new Date().toISOString() });
-
-        // Vérifier les seuils critiques
-        const hadAnomaly = await checkThresholds(equipment.id, measurement);
-
-        // Si pas d'anomalie, remettre le statut à "En fonctionnement"
-        if (!hadAnomaly) {
-          await pool.query(
-            "UPDATE equipments SET status = 'En fonctionnement' WHERE id = ? AND status = 'Anomalie'",
-            [equipment.id]
-          );
-        }
       }
 
       // Diffuser toutes les nouvelles mesures aux clients WebSocket
