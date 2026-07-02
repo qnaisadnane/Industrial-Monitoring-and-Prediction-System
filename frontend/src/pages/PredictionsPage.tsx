@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import jsPDF from 'jspdf';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -136,6 +137,55 @@ const PredictionsPage: React.FC = () => {
     }
   };
 
+  const handleExportPdf = () => {
+    const doc = new jsPDF();
+    const title = 'Rapport des évaluations de risques';
+    const now = new Date().toLocaleString('fr-FR');
+
+    doc.setFontSize(18);
+    doc.text(title, 14, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Généré le ${now}`, 14, 28);
+
+    let y = 40;
+    const pageHeight = doc.internal.pageSize.height;
+
+    filtered.forEach((prediction, index) => {
+      if (y > pageHeight - 40) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setFontSize(12);
+      doc.setTextColor(0);
+      doc.text(`${index + 1}. ${prediction.equipment_name}`, 14, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setTextColor(80);
+      doc.text(`Risque: ${prediction.risk_level}`, 16, y);
+      y += 6;
+      doc.text(`Date estimée: ${new Date(prediction.estimated_failure_date).toLocaleDateString('fr-FR')}`, 16, y);
+      y += 6;
+      doc.text(`Technicien: ${prediction.technicien_name}`, 16, y);
+      y += 6;
+      const justification = doc.splitTextToSize(prediction.justification, 180);
+      doc.text(justification, 16, y);
+      y += 10 + justification.length * 5;
+      if (y > pageHeight - 18) {
+        doc.addPage();
+        y = 20;
+      }
+    });
+
+    if (filtered.length === 0) {
+      doc.setFontSize(11);
+      doc.text('Aucune évaluation à exporter.', 14, y);
+    }
+
+    doc.save('evaluations-risques.pdf');
+  };
+
   const filtered = filterRisk === 'Tous' ? predictions : predictions.filter(p => p.risk_level === filterRisk);
 
   // KPI counts
@@ -182,6 +232,14 @@ const PredictionsPage: React.FC = () => {
               </button>
             ))}
           </div>
+
+          <button
+            onClick={handleExportPdf}
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold text-xs rounded-2xl transition-all shadow-lg shadow-emerald-500/20"
+          >
+            <TrendingUp className="w-4 h-4" />
+            Exporter PDF
+          </button>
 
           {/* Add button — Technicien only */}
           {user?.role === 'Technicien' && (

@@ -73,6 +73,7 @@ const EquipmentsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<StatusType | null>(null);
+  const [categoriesList, setCategoriesList] = useState<{ id: number; name: string }[]>([]);
 
   // --- Admin Modal State ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -104,8 +105,18 @@ const EquipmentsPage: React.FC = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategoriesList(response.data);
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
+
   useEffect(() => {
     fetchEquipments();
+    fetchCategories();
   }, []);
 
   // ──────────────────────────────────────────────
@@ -210,8 +221,13 @@ const EquipmentsPage: React.FC = () => {
     );
   }
 
-  // Catégories uniques dérivées dynamiquement
-  const categories = Array.from(new Set(equipments.map((eq) => eq.type))).filter(Boolean).sort();
+  // Catégories uniques configurées + celles utilisées par des équipements
+  const categories = Array.from(
+    new Set([
+      ...categoriesList.map((cat) => cat.name),
+      ...equipments.map((eq) => eq.type)
+    ])
+  ).filter(Boolean).sort();
 
   const isFiltered = searchQuery !== '' || filterCategory !== null || filterStatus !== null;
 
@@ -482,8 +498,19 @@ const EquipmentsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Catégorie</label>
-                  <input type="text" required value={type} onChange={(e) => setType(e.target.value)} placeholder="ex: Moteur, Turbine..."
-                    className="px-4 py-3 bg-slate-900 border border-white/5 rounded-xl focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 text-white text-sm" />
+                  <select 
+                    required 
+                    value={type} 
+                    onChange={(e) => setType(e.target.value)}
+                    className="px-4 py-3 bg-slate-900 border border-white/5 rounded-xl focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 text-white text-sm"
+                  >
+                    <option value="" disabled>Choisir une catégorie...</option>
+                    {categoriesList.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">Localisation / Zone</label>

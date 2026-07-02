@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import EquipmentsPage from './pages/EquipmentsPage';
+import CategoriesPage from './pages/CategoriesPage';
 import AlertsPage from './pages/AlertsPage';
 import PredictionsPage from './pages/PredictionsPage';
 import UsersPage from './pages/UsersPage';
@@ -54,12 +55,20 @@ const AuthenticatedLayout: React.FC = () => {
           <Route path="alerts" element={<AlertsPage />} />
           <Route path="predictions" element={<PredictionsPage />} />
           
-          {/* Admin only route */}
+          {/* Admin only routes */}
           <Route 
             path="users" 
             element={
               <ProtectedRoute allowedRole="Administrateur">
                 <UsersPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="categories" 
+            element={
+              <ProtectedRoute allowedRole="Administrateur">
+                <CategoriesPage />
               </ProtectedRoute>
             } 
           />
