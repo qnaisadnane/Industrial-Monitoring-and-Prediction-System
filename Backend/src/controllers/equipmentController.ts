@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { createNotificationForUsers } from '../services/websocketService';
 
 // Lister tous les équipements (Admin + Technicien)
 export const getEquipments = async (req: Request, res: Response): Promise<void> => {
@@ -80,11 +81,22 @@ export const updateEquipment = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    const nextStatus = status || equipment.status;
+
     await pool.query<ResultSetHeader>(
       'UPDATE equipments SET name = ?, type = ?, location = ?, installation_date = ?, status = ? WHERE id = ?',
       [name || equipment.name, type || equipment.type, location || equipment.location,
-       installation_date || equipment.installation_date, status || equipment.status, id]
+       installation_date || equipment.installation_date, nextStatus, id]
     );
+
+    if (nextStatus === 'Anomalie' && equipment.status !== 'Anomalie') {
+      const usersRows = await pool.query<RowDataPacket[]>('SELECT id FROM users');
+      const users = usersRows[0] as RowDataPacket[];
+      await createNotificationForUsers(
+        users.map((user) => user.id as number),
+        `🚨 L'équipement ${equipment.name} est passé en anomalie.`
+      );
+    }
 
     res.json({ message: 'Équipement mis à jour avec succès.' });
   } catch (error) {
@@ -123,6 +135,15 @@ export const updateEquipmentStatus = async (req: Request, res: Response): Promis
   }
 
   try {
+    const [equipmentRows] = await pool.query<RowDataPacket[]>(
+      'SELECT id, name, status FROM equipments WHERE id = ?', [id]
+    );
+    const equipment = equipmentRows[0] as RowDataPacket | undefined;
+    if (!equipment) {
+      res.status(404).json({ message: 'Équipement non trouvé.' });
+      return;
+    }
+
     const [result] = await pool.query<ResultSetHeader>(
       'UPDATE equipments SET status = ? WHERE id = ?', [status, id]
     );
@@ -130,6 +151,16 @@ export const updateEquipmentStatus = async (req: Request, res: Response): Promis
       res.status(404).json({ message: 'Équipement non trouvé.' });
       return;
     }
+
+    if (status === 'Anomalie' && equipment.status !== 'Anomalie') {
+      const usersRows = await pool.query<RowDataPacket[]>('SELECT id FROM users');
+      const users = usersRows[0] as RowDataPacket[];
+      await createNotificationForUsers(
+        users.map((user) => user.id as number),
+        `🚨 L'équipement ${equipment.name} est passé en anomalie.`
+      );
+    }
+
     res.json({ message: 'Statut mis à jour avec succès.' });
   } catch (error) {
     console.error(error);

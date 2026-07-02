@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import { broadcast } from '../services/websocketService';
+import { broadcast, createNotificationForUsers } from '../services/websocketService';
 
 // US16: Récupérer toutes les alertes
 export const getAlerts = async (req: Request, res: Response): Promise<void> => {
@@ -80,12 +80,10 @@ export const createAlert = async (req: Request, res: Response): Promise<void> =>
     // Créer des notifications pour tous les utilisateurs
     const usersRows = await pool.query<RowDataPacket[]>('SELECT id FROM users');
     const users = usersRows[0] as RowDataPacket[];
-    for (const user of users) {
-      await pool.query(
-        'INSERT INTO notifications (user_id, message) VALUES (?, ?)',
-        [user.id, `⚠️ Nouvelle alerte sur ${equipment_name}: ${description}`]
-      );
-    }
+    await createNotificationForUsers(
+      users.map((user) => user.id as number),
+      `⚠️ Nouvelle alerte sur ${equipment_name}: ${description}`
+    );
 
     res.status(201).json(newAlert);
   } catch (error) {

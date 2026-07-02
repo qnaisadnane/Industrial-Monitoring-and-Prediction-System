@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../config/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { createNotificationForUsers } from '../services/websocketService';
 
 // Récupérer toutes les évaluations manuelles
 export const getPredictions = async (req: Request, res: Response): Promise<void> => {
@@ -73,6 +74,13 @@ export const createPrediction = async (req: Request, res: Response): Promise<voi
 
     const equipment_name = (equipRows[0] as RowDataPacket[])[0]?.name || `#${equipment_id}`;
     const technicien_name = (userRows[0] as RowDataPacket[])[0]?.fullname || 'Inconnu';
+
+    const usersRows = await pool.query<RowDataPacket[]>('SELECT id FROM users');
+    const users = usersRows[0] as RowDataPacket[];
+    await createNotificationForUsers(
+      users.map((user) => user.id as number),
+      `🧠 Nouvelle évaluation ajoutée pour ${equipment_name} : risque ${risk_level}`
+    );
 
     res.status(201).json({
       id: insertId,
