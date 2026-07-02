@@ -12,9 +12,14 @@ import dashboardRoutes   from './routes/dashboardRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import predictionRoutes  from './routes/predictionRoutes';
 import reportRoutes      from './routes/reportRoutes';
+import categoryRoutes    from './routes/categoryRoutes';
 import { initWebSocket } from './services/websocketService';
+import { initDb }        from './config/dbInit';
 
 dotenv.config();
+
+// Initialiser la base de données
+initDb();
 
 const app = express();
 app.use(cors());
@@ -24,6 +29,7 @@ app.use(express.json());
 app.use('/api/auth',          authRoutes);
 app.use('/api/users',         userRoutes);
 app.use('/api/equipments',    equipmentRoutes);
+app.use('/api/categories',    categoryRoutes);
 app.use('/api/alerts',        alertRoutes);
 app.use('/api/dashboard',     dashboardRoutes);
 app.use('/api/notifications', notificationRoutes);
